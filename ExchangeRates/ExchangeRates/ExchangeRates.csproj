@@ -35,7 +35,7 @@
   <ItemGroup>
     <Reference Include="MultiWebClient, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\MultiWebClient\MultiWebClient\bin\Release\MultiWebClient.dll</HintPath>
+      <HintPath>lib\MultiWebClient.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
