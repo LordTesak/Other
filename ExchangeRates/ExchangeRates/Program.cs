@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using MultiWeb;
 
@@ -36,12 +35,12 @@ namespace ExchangeRates {
 			}
 		}
 
-		static List<ExchangeRate> lineStatus = new List<ExchangeRate>();
+		static List<ExchangeRate> lineState = new List<ExchangeRate>();
 		static SortedList<Currency, Currency> allCurrencies = new SortedList<Currency, Currency>();
 		static List<Tuple<DateTime, SortedList<Currency, decimal>>> exchangeRates = new List<Tuple<DateTime, SortedList<Currency, decimal>>>();
 		static IFormatProvider czechCulture = new System.Globalization.CultureInfo("cs-CZ");
-		static short min_year = 1991;
-		static short max_year = 2017;
+		const short min_year = 1991;
+		const short max_year = 2017;
 
 		static void Main(string[] args) {
 
@@ -49,8 +48,6 @@ namespace ExchangeRates {
 			ParseDownloadedData(pages);
 			var changes = CalculateGrowthRates();
 			FindAndPrintBestSolution(changes);
-
-			Console.ReadLine();
 		}
 
 		static string[] DownloadExchangeRates() {
@@ -173,7 +170,7 @@ namespace ExchangeRates {
 		}
 
 		static void ChangeLineState(string[] cells) {
-			lineStatus = new List<ExchangeRate>();
+			lineState = new List<ExchangeRate>();
 			foreach (var cell in cells) {
 				if (cell == "Datum")
 					continue;
@@ -188,21 +185,21 @@ namespace ExchangeRates {
 				ExchangeRate rate_info = new ExchangeRate();
 				rate_info.Currency = currency_code;
 				rate_info.BaseRate = 1 / decimal.Parse(tmp[0]);
-				lineStatus.Add(rate_info);
+				lineState.Add(rate_info);
 			}
 		}
 
 		static void AddExchangeRateData(string[] cells) {
 			string[] s_date = cells[0].Split('.');
 			DateTime date = new DateTime(day: int.Parse(s_date[0]), month: int.Parse(s_date[1]), year: int.Parse(s_date[2]));
-			var currency_enumerator = lineStatus.GetEnumerator();
+			var currency_enumerator = lineState.GetEnumerator();
 			SortedList<Currency, decimal> rates_data = new SortedList<Currency, decimal>();
 
 			for (int i = 1; i < cells.Length; i++) {
 				currency_enumerator.MoveNext();
-				decimal _rate = decimal.Parse(cells[i], provider: czechCulture);
+				decimal raw_rate = decimal.Parse(cells[i], provider: czechCulture);
 				ExchangeRate rate = currency_enumerator.Current;
-				rates_data.Add(rate.Currency, rate.BaseRate * _rate);
+				rates_data.Add(rate.Currency, rate.BaseRate * raw_rate);
 			}
 
 			exchangeRates.Add(new Tuple<DateTime, SortedList<Currency, decimal>>(date, rates_data));
