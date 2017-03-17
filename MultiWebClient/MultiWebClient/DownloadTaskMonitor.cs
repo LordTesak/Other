@@ -58,7 +58,7 @@ namespace MultiWeb {
 		}
 	}
 
-	
+
 	public class DownloadTaskMonitor {
 		private ConcurrentBag<DownloadTaskItem> archive_table;
 		private DownloadTaskItemActive[] active_table;

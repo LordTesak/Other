@@ -17,13 +17,11 @@ namespace MultiWeb {
 		private short workerCount;
 		private long nextId;
 		private long pending_downloads;
-		//private string login;
-		//private string password;
 		public IMultiWebClientController Controller;
 		private CookieContainer cookies;
 		private ConcurrentQueue<DownloadTask> main_queue;
 		private ConcurrentDictionary<DownloadTaskId, DownloadTask> download_table;
-		
+
 		private bool logged_in;
 		private bool wrong_password;
 		private object monitor_cookies = new object();
@@ -34,7 +32,7 @@ namespace MultiWeb {
 		private object monitor_pending_downloads = new object();
 
 		private Thread[] workers_thread;
-		private ProxyClientWorker[] workers_client;
+		private MultiWebClientWorker[] workers_client;
 
 		public DownloadTaskMonitor DownloadMonitor;
 
@@ -80,7 +78,7 @@ namespace MultiWeb {
 			this.Controller = controller;
 			this.download_table = new ConcurrentDictionary<DownloadTaskId, DownloadTask>();
 			this.main_queue = new ConcurrentQueue<DownloadTask>();
-			this.workers_client = new ProxyClientWorker[workerCount];
+			this.workers_client = new MultiWebClientWorker[workerCount];
 			this.workers_thread = new Thread[workerCount];
 			this.cookies = new CookieContainer();
 			this.logged_in = false;
@@ -101,31 +99,21 @@ namespace MultiWeb {
 			AbortDownloadingThreads();
 			for (int i = 0; i < workerCount; i++) {
 				StartWorkingThread(i);
-				//int j = i;
-				//workers_thread[i] = new Thread(() => WorkerMain(this, j));
-				//workers_thread[i].Name = string.Format("{0}-Worker: {1}", this.GetHashCode(), i);
-				//workers_thread[i].IsBackground = true;
-				//workers_thread[i].Start();
 			}
 		}
 
 		public void ReactivateDownloadingThreads(int threadPoolSize) {
-			if(threadPoolSize <= 0 || threadPoolSize > 2048) {
+			if (threadPoolSize <= 0 || threadPoolSize > 2048) {
 				throw new ArgumentOutOfRangeException("Thread pool size must be between 1 and 2048");
 			}
 			AbortDownloadingThreads();
-			workers_client = new ProxyClientWorker[threadPoolSize];
+			workers_client = new MultiWebClientWorker[threadPoolSize];
 			workers_thread = new Thread[threadPoolSize];
 			workerCount = (short)threadPoolSize;
 			DownloadMonitor = new DownloadTaskMonitor(DownloadMonitor, workerCount);
-			
+
 			for (int i = 0; i < workerCount; i++) {
 				StartWorkingThread(i);
-				//int j = i;
-				//workers_thread[i] = new Thread(() => WorkerMain(this, j));
-				//workers_thread[i].Name = string.Format("{0}-Worker: {1}", this.GetHashCode(), i);
-				//workers_thread[i].IsBackground = true;
-				//workers_thread[i].Start();
 			}
 		}
 
@@ -182,7 +170,7 @@ namespace MultiWeb {
 			download_table.TryRemove(id, out result);
 			return result.Result;
 		}
-		
+
 		public void WaitAllDownloads() {
 			while (true) {
 				if (pending_downloads == 0)
@@ -211,7 +199,7 @@ namespace MultiWeb {
 							System.Threading.Monitor.Exit(monitor_logging);
 							return logged;
 						} catch (WebException ex) {
-							//Záznamy.Zapiš(ex.Message, Záznamy.Závažnost.Chyby);
+							// ToDo: Logger
 						}
 					}
 				}
@@ -223,7 +211,7 @@ namespace MultiWeb {
 	}
 
 	class NotLoggedInException : Exception {
-		public NotLoggedInException(bool disconnected) : base("Nejste přihlášen do hry.") {
+		public NotLoggedInException(bool disconnected) : base("You are not logged in.") {
 			this.reconnected = !disconnected;
 		}
 		public bool Reconnected {

@@ -15,11 +15,11 @@ namespace MultiWeb {
 	public partial class MultiWebClient {
 
 		static private void WorkerMain(MultiWebClient client, int id) {
-			client.workers_client[id] = new ProxyClientWorker(client);
+			client.workers_client[id] = new MultiWebClientWorker(client);
 
 			DownloadTask task;
-			while(true) {
-				if(client.main_queue.TryDequeue(out task)) {
+			while (true) {
+				if (client.main_queue.TryDequeue(out task)) {
 					client.DownloadMonitor.DownloadStarted(id, DateTime.Now, task.Address);
 					WorkerProcess(client, id, task);
 					bool success = (task.Exception == null);
@@ -42,26 +42,25 @@ namespace MultiWeb {
 				task.Result = result;
 				ProcessIngamePage(client, result);
 
-			} catch(Exception ex) {
+			} catch (Exception ex) {
 				task.Exception = ex;
 			} finally {
 				Interlocked.Decrement(ref client.pending_downloads);
 			}
-			
+
 		}
 
 		static private void ProcessIngamePage(MultiWebClient client, string page) {
 			client.Controller.ProcessPage(page);
 		}
-		
+
 	}
 
 
-	class ProxyClientWorker : WebClient {
+	class MultiWebClientWorker : WebClient {
 
 		private MultiWebClient client;
-		private CookieContainer Cookies
-		{
+		private CookieContainer Cookies {
 			get { return client.Cookies; }
 			set { client.Cookies = value; }
 		}
@@ -69,7 +68,7 @@ namespace MultiWeb {
 		private bool web_exception;
 		private bool page_redecode;
 
-		public ProxyClientWorker(MultiWebClient client) {
+		public MultiWebClientWorker(MultiWebClient client) {
 
 			this.client = client;
 			this.web_exception = false;
@@ -79,18 +78,17 @@ namespace MultiWeb {
 			this.Headers.Add(HttpRequestHeader.AcceptLanguage, "cs-CZ,cs;q=0.8");
 			this.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.122 Safari/537.36 OPR/24.0.1558.64");
 		}
-		
+
 		protected override WebResponse GetWebResponse(WebRequest request) {
 			WebResponse result;
 			try {
 				result = base.GetWebResponse(request);
-			} catch(WebException ex) {
+			} catch (WebException ex) {
 				web_exception = true;
 				exception = ex;
 				return null;
 			}
-			if(!client.Controller.LogInCheck(result)
-				 /*result.ResponseUri.AbsolutePath == "/login.php"*/) {
+			if (!client.Controller.LogInCheck(result)) {
 				client.LogIn();
 				throw new NotLoggedInException(true);
 			}
@@ -122,33 +120,33 @@ namespace MultiWeb {
 		}
 
 		public new string DownloadString(string uri) {
-			while(true) {
+			while (true) {
 				try {
 					client.CheckLogin();
 					var result = base.DownloadString(uri);
 					result = DecodeString(result);
 					return result;
-				} catch(NotLoggedInException ex) {
-					//Záznamy.Zapiš(ex.Message, Záznamy.Závažnost.VnitřníChyba);
+				} catch (NotLoggedInException ex) {
+					// ToDo: Logger
 					continue;
-				} catch(WebException ex) {
+				} catch (WebException ex) {
 					System.Diagnostics.Debug.WriteLine(ex.Message);
 				}
 			}
 		}
-		
+
 		public new string UploadString(string uri, string data) {
-			while(true) {
+			while (true) {
 				try {
 					client.CheckLogin();
 					this.Headers.Add(HttpRequestHeader.ContentType, "application/x-www-form-urlencoded");
 					var result = base.UploadString(uri, data);
 					result = DecodeString(result);
 					return result;
-				} catch(NotLoggedInException ex) {
-					//Záznamy.Zapiš(ex.Message, Záznamy.Závažnost.VnitřníChyba);
+				} catch (NotLoggedInException ex) {
+					// ToDo: Logger
 					continue;
-				} catch(WebException ex) {
+				} catch (WebException ex) {
 					System.Diagnostics.Debug.WriteLine(ex.Message);
 				}
 			}
@@ -157,7 +155,7 @@ namespace MultiWeb {
 		private string DecodeString(string page) {
 			string result = page;
 			result = WebUtility.HtmlDecode(result);
-			
+
 			try {
 				if (page_redecode) {
 					byte[] bytes = this.Encoding.GetBytes(page);
@@ -175,12 +173,12 @@ namespace MultiWeb {
 					result = Encoding.GetEncoding(charset).GetString(bytes);
 				}
 			} catch (Exception) {
-				//Záznamy.Zapiš(ex.Message, Záznamy.Závažnost.VnějšíChyba);
+				// ToDo: Logger
 			}
 			return result;
 
 		}
-		
+
 	}
 
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MultiWeb {
 	public static class Util {
-		
+
 		public static void Populate<T>(ref T[] array, T value) {
 			for (int i = 0; i < array.Length; i++) {
 				array[i] = value;
